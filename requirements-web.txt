@@ -1,0 +1,21 @@
+# Core model/runtime dependencies (the GUI-only Qt packages are omitted)
+filesplit==3.0.2
+opencv-python==4.11.0.86
+scikit-image==0.25.2
+tqdm==4.67.1
+numpy==2.2.5
+av==17.0.0
+einops==0.8.1
+paddleocr==3.4.0
+matplotlib
+Pillow
+scipy
+requests
+
+# ARM64 Paddle wheel is resolved from the platform index during deployment.
+paddlepaddle==3.2.2
+
+# HTTP service
+fastapi>=0.115,<1
+python-multipart>=0.0.9,<1
+uvicorn[standard]>=0.34,<1

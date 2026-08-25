@@ -1,0 +1,16 @@
+[Unit]
+Description=Video Subtitle Remover Web API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/video-subtitle-remover-web
+EnvironmentFile=-%h/video-subtitle-remover-web/.env
+ExecStart=%h/video-subtitle-remover-web/run_web.sh
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

@@ -24,6 +24,38 @@ Video-subtitle-remover (VSR) 是一款基于AI技术，将视频中的硬字幕�
 - 支持全视频自动去除所有文本（不传入位置）
 - 支持多选图片批量去除水印文本
 
+## Web/API 服务
+
+项目提供一个轻量 Web 工作台和异步 HTTP API。它复用原有的 STTN、LAMA、ProPainter、OpenCV 算法，并额外提供“固定水印 LAMA”模式，适合全程固定位置的 Logo/水印。
+
+### 本地启动
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-web.txt
+cp .env.example .env
+./run_web.sh
+```
+
+打开 `http://127.0.0.1:8000/`，API 文档位于 `http://127.0.0.1:8000/docs`。服务默认单 worker，避免模型和 GPU 并发冲突；可通过 `WEB_API_KEY` 开启 API key 鉴权，并用 `VSR_DATA_DIR` 指定上传/输出目录。
+
+### API 示例
+
+创建任务使用 `multipart/form-data`：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/jobs \
+  -F 'file=@input.mp4' \
+  -F 'mode=logo-lama' \
+  -F 'subtitle_area_coords=[[620,700,80,1160]]' \
+  -F 'pad=6'
+```
+
+返回任务 id 后轮询 `GET /api/jobs/{id}`；成功时从 `GET /api/jobs/{id}/download` 下载结果。坐标顺序为 `[ymin, ymax, xmin, xmax]`，固定水印模式支持多个区域。
+
+运行中或排队中的任务可调用 `POST /api/jobs/{id}/pause` 暂停，再调用 `POST /api/jobs/{id}/resume` 继续。运行中的任务暂停后不会继续占用 GPU 算力，但已加载模型的显存仍会保留。
+
 ![demo.png](https://github.com/YaoFANGUK/video-subtitle-remover/raw/main/design/demo.png)
 
 **使用说明：**

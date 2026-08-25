@@ -1,7 +1,7 @@
 import argparse
 from enum import Enum
 
-from .constant import InpaintMode
+from .constant import InpaintMode, SubtitleDetectMode
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,6 +23,11 @@ def parse_args():
         "--inpaint-mode", type=str, default="sttn-auto",
         choices=[mode.name.lower().replace('_','-') for mode in InpaintMode],
         help="Inpaint mode, default is sttn-auto"
+    )
+    parser.add_argument(
+        "--subtitle-detect-mode", type=str, default=SubtitleDetectMode.PP_OCRv5_SERVER.value,
+        choices=[mode.value for mode in SubtitleDetectMode],
+        help="Subtitle detection model used by detection-based modes"
     )
     args = parser.parse_args()
     args.inpaint_mode = InpaintMode[args.inpaint_mode.replace('-','_').upper()]

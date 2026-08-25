@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101315">
+    <title>视频水印清除工作台</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css?v=20260821-hidden-controls">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="视频水印清除工作台首页">
+        <span class="brand-mark" aria-hidden="true">VSR</span>
+        <span>
+          <strong>视频水印清除</strong>
+          <small>处理工作台</small>
+        </span>
+      </a>
+      <div class="service-state" id="service-state" role="status" aria-live="polite">
+        <span class="state-dot" aria-hidden="true"></span>
+        <span id="service-state-text">正在连接服务</span>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">VIDEO RESTORATION</p>
+          <h1 id="page-title">视频处理工作台</h1>
+          <p class="intro-copy">上传一段视频，选择适合的修复方式，结果会在同一页面生成并下载。</p>
+        </div>
+        <div class="api-key-wrap" id="api-key-wrap" hidden>
+          <label for="api-key">API Key</label>
+          <input id="api-key" type="password" autocomplete="off" placeholder="输入访问密钥">
+        </div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel controls-panel" aria-labelledby="controls-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">01 / INPUT</p>
+              <h2 id="controls-title">准备视频</h2>
+            </div>
+            <span class="step-label">新建任务</span>
+          </div>
+
+          <form id="job-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="video-file">视频文件</label>
+              <label class="dropzone" id="dropzone" for="video-file" tabindex="0">
+                <input id="video-file" name="file" type="file" accept="video/*,.mkv,.avi,.webm,.mov" hidden>
+                <span class="dropzone-icon" aria-hidden="true">+</span>
+                <span class="dropzone-title">拖放视频到这里</span>
+                <span class="dropzone-subtitle">或点击选择文件，单个文件不超过服务限制</span>
+                <span class="file-summary" id="file-summary" hidden></span>
+              </label>
+            </div>
+
+            <fieldset class="field-group mode-fieldset">
+              <legend class="field-label">处理方式</legend>
+              <div class="mode-list" id="mode-list" aria-live="polite">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+              </div>
+            </fieldset>
+
+            <div class="field-group area-group">
+              <div class="label-row">
+                <label class="field-label" for="coords">固定区域（可选）</label>
+                <span class="field-meta">ymin, ymax, xmin, xmax</span>
+              </div>
+              <textarea id="coords" name="subtitle_area_coords" rows="3" spellcheck="false" placeholder="例如：[[620, 700, 80, 1160]]"></textarea>
+              <p class="field-note">固定水印模式必须填写；多个区域写在同一个 JSON 数组中。</p>
+            </div>
+
+            <div class="advanced-row">
+              <div class="compact-field">
+                <label for="pad">边缘扩展</label>
+                <div class="input-with-unit">
+                  <input id="pad" name="pad" type="number" min="0" max="512" value="6" inputmode="numeric">
+                  <span>px</span>
+                </div>
+              </div>
+              <div class="compact-field">
+                <label for="detect-mode">字幕检测模型</label>
+                <select id="detect-mode" name="detect_mode">
+                  <option value="PP_OCRv5_SERVER">高精度</option>
+                  <option value="PP_OCRv5_MOBILE">轻量</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-footer">
+              <p class="form-error" id="form-error" role="alert" hidden></p>
+              <button class="primary-button" id="submit-button" type="submit" disabled>
+                <span>开始处理</span>
+                <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="panel monitor-panel" aria-labelledby="monitor-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">02 / MONITOR</p>
+              <h2 id="monitor-title">任务状态</h2>
+            </div>
+            <span class="status-chip status-idle" id="status-chip">空闲</span>
+          </div>
+
+          <div class="empty-monitor" id="empty-monitor">
+            <div class="empty-line" aria-hidden="true"></div>
+            <p>上传视频后，这里会显示实时进度。</p>
+          </div>
+
+          <div class="task-monitor" id="task-monitor" hidden>
+            <div class="task-head">
+              <div>
+                <span class="task-mode" id="task-mode">等待中</span>
+                <h3 id="task-name">未选择文件</h3>
+              </div>
+              <span class="progress-number" id="progress-number">0%</span>
+            </div>
+            <div class="progress-track" aria-label="任务进度">
+              <span class="progress-fill" id="progress-fill"></span>
+            </div>
+            <p class="task-message" id="task-message" role="status" aria-live="polite">等待上传</p>
+            <div class="log-box" id="log-box" aria-label="任务日志" tabindex="0"></div>
+            <div class="task-actions">
+              <button class="secondary-button" id="pause-button" type="button" hidden><span aria-hidden="true">Ⅱ</span> 暂停任务</button>
+              <a class="download-button" id="download-button" href="#" hidden download>下载处理结果 <span aria-hidden="true">↓</span></a>
+              <button class="secondary-button" id="retry-button" type="button" hidden>重新处理</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="recent-section" aria-labelledby="recent-title">
+        <div class="section-heading-row">
+          <div>
+            <p class="section-kicker">03 / HISTORY</p>
+            <h2 id="recent-title">最近任务</h2>
+          </div>
+          <button class="text-button" id="refresh-jobs" type="button">刷新</button>
+        </div>
+        <div class="recent-list" id="recent-list">
+          <p class="recent-empty">暂无历史任务</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Video Subtitle Remover</span>
+      <a href="/docs">API 文档</a>
+    </footer>
+    <script src="/app.js?v=20260821-pause-resume" defer></script>
+  </body>
+</html>

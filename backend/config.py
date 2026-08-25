@@ -1,8 +1,76 @@
 
 import os
 from pathlib import Path
-from qfluentwidgets import (qconfig, ConfigItem, QConfig, OptionsValidator, BoolValidator, OptionsConfigItem, 
-                            EnumSerializer, RangeValidator, RangeConfigItem, ConfigValidator)
+try:
+    from qfluentwidgets import (qconfig, ConfigItem, QConfig, OptionsValidator, BoolValidator, OptionsConfigItem,
+                                EnumSerializer, RangeValidator, RangeConfigItem, ConfigValidator)
+except ImportError:  # pragma: no cover - used by the headless web deployment
+    # The processing backend only needs the small value/config surface below;
+    # keeping this fallback avoids importing Qt in a server-only environment.
+    import json
+
+    class _ConfigItem:
+        def __init__(self, group, key, default, *args, **kwargs):
+            self.group = group
+            self.key = key
+            self.value = default
+            self.defaultValue = default
+
+    class ConfigItem(_ConfigItem):
+        pass
+
+    class OptionsConfigItem(_ConfigItem):
+        pass
+
+    class RangeConfigItem(_ConfigItem):
+        pass
+
+    class QConfig:
+        def set(self, item, value):
+            item.value = value
+
+    class _NoopValidator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    OptionsValidator = BoolValidator = EnumSerializer = RangeValidator = ConfigValidator = _NoopValidator
+
+    class _HeadlessQConfig:
+        @staticmethod
+        def load(path, cfg):
+            try:
+                with open(path, encoding="utf-8") as source:
+                    values = json.load(source)
+            except (FileNotFoundError, json.JSONDecodeError, OSError):
+                return
+            for item in vars(type(cfg)).values():
+                if not isinstance(item, _ConfigItem):
+                    continue
+                group_values = values.get(item.group, {})
+                if item.key not in group_values:
+                    continue
+                value = group_values[item.key]
+                default = item.defaultValue
+                if hasattr(default, "__class__") and hasattr(default.__class__, "__members__"):
+                    try:
+                        value = default.__class__(value)
+                    except (TypeError, ValueError):
+                        continue
+                item.value = value
+
+        @staticmethod
+        def save(path="config/config.json", cfg=None):
+            if cfg is None:
+                return
+            values = {}
+            for item in vars(type(cfg)).values():
+                if isinstance(item, _ConfigItem):
+                    values.setdefault(item.group, {})[item.key] = getattr(item.value, "value", item.value)
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "w", encoding="utf-8") as target:
+                json.dump(values, target, ensure_ascii=False, indent=2)
+
+    qconfig = _HeadlessQConfig()
 from backend.tools.constant import InpaintMode, SubtitleDetectMode
 import configparser
 
@@ -119,10 +187,24 @@ if isinstance(_detect_mode_value, str) and _detect_mode_value in ("快速", "Fas
 elif isinstance(_detect_mode_value, str) and _detect_mode_value in ("精准", "Precise"):
     config.set(config.subtitleDetectMode, SubtitleDetectMode.PP_OCRv5_SERVER)
 
-# 读取界面语言配置
+# 读取界面语言配置。桌面配置文件缺失时，qfluentwidgets 的默认值是
+# ``ChineseSimplified``，而仓库中的翻译文件使用 ``ch`` 命名；服务端需要
+# 在导入阶段把这个旧值归一化，避免模型进程在硬件探测时访问空翻译表。
+_interface_aliases = {
+    "ChineseSimplified": "ch",
+    "ChineseTraditional": "chinese_cht",
+    "简体中文": "ch",
+    "繁體中文": "chinese_cht",
+}
+_interface_value = _interface_aliases.get(config.interface.value, config.interface.value)
+_interface_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'interface')
+if not os.path.isfile(os.path.join(_interface_dir, f"{_interface_value}.ini")):
+    _interface_value = "en"
+config.set(config.interface, _interface_value)
+
 tr = configparser.ConfigParser()
 
-TRANSLATION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'interface', f"{config.interface.value}.ini")
+TRANSLATION_FILE = os.path.join(_interface_dir, f"{_interface_value}.ini")
 tr.read(TRANSLATION_FILE, encoding='utf-8')
 
 # 项目的base目录

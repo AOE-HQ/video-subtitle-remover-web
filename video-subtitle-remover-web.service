@@ -1,0 +1,19 @@
+[Unit]
+Description=Video Subtitle Remover Web API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/mnt/sda/video-subtitle-remover-web
+EnvironmentFile=/mnt/sda/video-subtitle-remover-web/.env
+ExecStart=/mnt/sda/video-subtitle-remover-web/run_web.sh
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

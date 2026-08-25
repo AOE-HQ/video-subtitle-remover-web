@@ -485,5 +485,7 @@ if __name__ == '__main__':
     sr.sub_areas = args.subtitle_area_coords
     sr.video_out_path = args.output
     config.inpaintMode.value = args.inpaint_mode
+    if getattr(args, 'subtitle_detect_mode', None) is not None:
+        config.set(config.subtitleDetectMode, SubtitleDetectMode(args.subtitle_detect_mode))
     sr.run()
         
