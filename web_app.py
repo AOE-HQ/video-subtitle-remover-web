@@ -1,4 +1,4 @@
-"""Small HTTP service for the video subtitle/watermark remover.
+"""Web workspace and HTTP API for the video subtitle/watermark remover.
 
 The web process owns only the queue and API state.  Each actual removal runs
 in a child Python process so a failed model load cannot take down the API and
@@ -324,9 +324,9 @@ def _start_worker() -> None:
 
 
 app = FastAPI(
-    title="Video Subtitle Remover API",
+    title="Video Subtitle and Watermark Remover API",
     version="1.0.0",
-    description="通过现有视频去字幕/固定水印算法创建异步处理任务。",
+    description="通过视频去字幕和水印算法创建、查询、暂停、恢复及下载异步处理任务。",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",

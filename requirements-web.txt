@@ -12,7 +12,8 @@ Pillow
 scipy
 requests
 
-# ARM64 Paddle wheel is resolved from the platform index during deployment.
+# CPU Paddle is the portable default. Replace it with the matching
+# paddlepaddle-gpu package when OCR should run on NVIDIA CUDA.
 paddlepaddle==3.2.2
 
 # HTTP service
